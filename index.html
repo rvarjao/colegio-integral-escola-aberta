@@ -80,6 +80,27 @@ h3{font:700 1.2rem/1.15 var(--font-display);text-wrap:balance}
 .credit-c a{color:var(--link);font-weight:700;font-size:1rem;overflow-wrap:anywhere;text-underline-offset:3px}
 .cp{appearance:none;width:46px;height:46px;padding:0;border:1.5px solid var(--ctl);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;display:inline-grid;place-items:center}
 .cpm{font-size:.92rem;color:var(--ink-2)}
+/* sugestões e elogios */
+.fb{display:flex;flex-direction:column;gap:14px}
+.fb fieldset{border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+.fb legend{padding:0;font-weight:700;font-size:1rem;margin-bottom:8px}
+.fb .opts{display:flex;flex-wrap:wrap;gap:8px}
+.fb .opt{position:relative}
+.fb .opt input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.fb .opt span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1.5px solid var(--ctl);border-radius:999px;background:var(--surface);font-weight:600;font-size:.95rem}
+.fb .opt input:checked+span{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.fb .opt input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px}
+.fb label.flabel{display:block}
+.fb textarea,.fb input[type=text]{width:100%;padding:12px 14px;border:1.5px solid var(--ctl);border-radius:14px;background:var(--surface);font:500 1rem/1.4 var(--font-body);color:var(--ink)}
+.fb textarea{min-height:110px;resize:vertical}
+.fb input[type=text]{height:52px;padding-top:0;padding-bottom:0}
+.fb .cnt{color:var(--ink-2);font-size:.9rem;text-align:right}
+.fb .iscas{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fb .send{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.fb .btn[disabled]{opacity:.55;cursor:not-allowed}
+.fb .status{font-weight:600;min-height:1.4em}
+.fb .status.ok{color:#1F6B3A}.fb .status.err{color:var(--link)}
+
 .slogan{font:600 1.05rem/1.3 var(--font-display);color:var(--link);text-wrap:balance}
 .lede{color:var(--ink-2);font-size:1.05rem;max-width:34em;text-wrap:pretty}
 .hint{color:var(--ink-2);font-size:.95rem;text-wrap:pretty}
@@ -260,6 +281,35 @@ h3{font:700 1.2rem/1.15 var(--font-display);text-wrap:balance}
     <div id="route"></div>
   </section>
 
+  <section id="sugestoes" aria-labelledby="h-sug">
+    <h2 id="h-sug">Sugestões e elogios</h2>
+    <p class="hint">Quer deixar um elogio ou uma sugestão sobre este guia ou sobre o evento? A mensagem chega só a quem desenvolveu o guia e à direção da escola. Ela não aparece no site. Por favor, não escreva nomes de alunos.</p>
+    <form class="fb" id="sug-form" novalidate>
+      <fieldset>
+        <legend>O que você quer enviar?</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="tipo" value="elogio" checked><span>Elogio</span></label>
+          <label class="opt"><input type="radio" name="tipo" value="sugestao"><span>Sugestão</span></label>
+          <label class="opt"><input type="radio" name="tipo" value="problema"><span>Algo não funcionou</span></label>
+        </div>
+      </fieldset>
+      <div>
+        <label class="flabel" for="sug-msg">Sua mensagem</label>
+        <textarea id="sug-msg" name="mensagem" maxlength="600" rows="4" aria-describedby="sug-cnt"></textarea>
+        <div class="cnt" id="sug-cnt" aria-live="off">0 / 600</div>
+      </div>
+      <div>
+        <label class="flabel" for="sug-nome">Seu nome <em>(opcional)</em></label>
+        <input type="text" id="sug-nome" name="nome" maxlength="60" autocomplete="name">
+      </div>
+      <div class="iscas" aria-hidden="true"><label>Não preencha este campo <input type="text" id="sug-site" tabindex="-1" autocomplete="off"></label></div>
+      <div class="send">
+        <button type="submit" class="btn" id="sug-btn">Enviar</button>
+        <span class="status" id="sug-status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </section>
+
   <p class="slogan">Sensibilidade para ver, conhecimento para transver.</p>
   <p class="foot">Salas e temas conforme a mensagem enviada pela escola. O roteiro começa pela sala da sua turma e agrupa as salas por andar para reduzir o vai e vem. Os tempos são estimativas.</p>
   <footer class="credit">
@@ -352,6 +402,61 @@ window.epdTrack=function(){};
     }
     if(document.readyState==='complete') setTimeout(inicio,300);
     else window.addEventListener('load',function(){ setTimeout(inicio,300); });
+  }catch(e){}
+})();
+</script>
+
+<script>
+/* Envio de sugestões e elogios. Vai só para a planilha; nada volta à página.
+   Independe da contagem de acessos: é uma ação explícita de quem escreve. */
+(function(){
+  try{
+    var ENDPOINT='https://script.google.com/macros/s/AKfycbxCLJJRGsrFBqfR3zlLzfMkKxdDJwKiI04zdC8uPk_0epbkf219-IFBX-RwNULdZXqH/exec';
+    var TOKEN='72015802af50fd56';
+    var f=document.getElementById('sug-form'); if(!f) return;
+    var msg=document.getElementById('sug-msg'), nome=document.getElementById('sug-nome'), isca=document.getElementById('sug-site');
+    var btn=document.getElementById('sug-btn'), st=document.getElementById('sug-status'), cnt=document.getElementById('sug-cnt');
+    var ocupado=false, enviadas=0, MAX_SESSAO=3;
+    function aviso(t,cls){ st.textContent=t; st.className='status'+(cls?' '+cls:''); }
+    function contar(){ cnt.textContent=msg.value.length+' / 600'; }
+    function vid(){
+      try{ var v=localStorage.getItem('epd-vid'); if(v&&/^[a-z0-9]{8,32}$/.test(v)) return v; }catch(e){}
+      var n=''; try{ var a=new Uint8Array(8); window.crypto.getRandomValues(a); for(var i=0;i<a.length;i++) n+=('0'+a[i].toString(16)).slice(-2); }
+      catch(e){ for(var j=0;j<16;j++) n+=Math.floor(Math.random()*16).toString(16); }
+      return n;
+    }
+    function aparelho(){
+      var ua=''; try{ ua=navigator.userAgent||''; }catch(e){}
+      if(/iPad|Tablet/i.test(ua)||(/Android/i.test(ua)&&!/Mobi/i.test(ua))) return 'tablet';
+      if(/Mobi|iPhone/i.test(ua)) return 'celular';
+      return 'computador';
+    }
+    msg.addEventListener('input',function(){ contar(); if(st.className.indexOf('ok')>-1) aviso(''); });
+    f.addEventListener('submit',function(ev){
+      try{
+        ev.preventDefault();
+        if(ocupado) return;
+        var texto=msg.value.replace(/^\s+|\s+$/g,'');
+        if(texto.length<3){ aviso('Escreva sua mensagem antes de enviar.','err'); msg.focus(); return; }
+        if(enviadas>=MAX_SESSAO){ aviso('Você já enviou algumas mensagens. Obrigado!','ok'); return; }
+        if(isca&&isca.value){ aviso('Enviado. Obrigado!','ok'); return; }
+        var tipo='elogio'; var r=f.querySelector('input[name=tipo]:checked'); if(r) tipo=r.value;
+        var corpo=JSON.stringify({t:TOKEN,o:location.origin+location.pathname,ev:'feedback',v:vid(),ap:aparelho(),k:tipo,m:texto.slice(0,600),n:nome.value.slice(0,60),hp:''});
+        ocupado=true; btn.disabled=true; aviso('Enviando…');
+        var ctrl=(typeof AbortController==='function')?new AbortController():null;
+        var timer=ctrl?setTimeout(function(){ try{ ctrl.abort(); }catch(e){} },10000):0;
+        var opts={method:'POST',mode:'no-cors',credentials:'omit',keepalive:true,headers:{'Content-Type':'text/plain;charset=UTF-8'},body:corpo};
+        if(ctrl) opts.signal=ctrl.signal;
+        fetch(ENDPOINT,opts).then(function(){
+          enviadas++; msg.value=''; contar(); aviso('Enviado. Obrigado!','ok');
+        },function(){
+          aviso('Não foi possível enviar agora. Seu texto foi mantido, tente de novo em instantes.','err');
+        }).then(function(){
+          clearTimeout(timer); ocupado=false; btn.disabled=false;
+        }).catch(function(){ ocupado=false; btn.disabled=false; });
+      }catch(e){ ocupado=false; try{ btn.disabled=false; aviso('Não foi possível enviar agora.','err'); }catch(x){} }
+    });
+    contar();
   }catch(e){}
 })();
 </script>
