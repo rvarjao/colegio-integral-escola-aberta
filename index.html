@@ -449,7 +449,7 @@ window.epdTrack=function(){};
         var opts={method:'POST',mode:'no-cors',credentials:'omit',keepalive:true,headers:{'Content-Type':'text/plain;charset=UTF-8'},body:corpo};
         if(ctrl) opts.signal=ctrl.signal;
         fetch(ENDPOINT,opts).then(function(){
-          enviadas++; msg.value=''; contar(); aviso('Enviado. Obrigado!','ok');
+          enviadas++; f.reset(); contar(); aviso('Enviado. Obrigado!','ok');
         },function(){
           aviso('Não foi possível enviar agora. Seu texto foi mantido, tente de novo em instantes.','err');
         }).then(function(){
